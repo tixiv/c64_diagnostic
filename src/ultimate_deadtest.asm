@@ -233,9 +233,9 @@ COLOR_GREEN = 5
 		
 		;set different value to each possible mirror ram location
 		;and test if original value was changed
-	!for .bit, .num_bits {
-			+wrtlp .tst_adr  XOR (1 << (.bit-1)), $FF
-			+tstlp .tst_adr, $00, .error_jmp, .bit+9 ;A0 = 10 blinks .... A15 = 25 blinks
+	!for .bit, 0, .num_bits-1 {
+			+wrtlp .tst_adr  XOR (1 << (.bit)), $FF
+			+tstlp .tst_adr, $00, .error_jmp, .bit+10 ;A0 = 10 blinks .... A15 = 25 blinks
 	}
 }
 
@@ -426,8 +426,8 @@ vlp:
 		lda #$00
 		ldx #$00
 kernal_tst_lp:
-		!for .bank, 32 {
-			eor $E000 + (.bank-1) * $100, x
+		!for .bank, 0, 31 {
+			eor $E000 + (.bank) * $100, x
 		}
 		clc
 		rol
@@ -457,8 +457,8 @@ kernal_test_end:
 		lda #$00
 		ldx #$00
 basic_tst_lp:
-		!for .bank, 32 {
-			eor $A000 + (.bank-1) * $100, x
+		!for .bank, 0, 31 {
+			eor $A000 + (.bank) * $100, x
 		}
 		clc
 		rol
