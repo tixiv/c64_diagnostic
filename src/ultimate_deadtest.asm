@@ -601,7 +601,7 @@ sub_E000:
 		jmp tstlp_finished
 
 tstlp_error:
-		JMP	loc_E2A5
+		JMP	ultimax_blink_start
 		
 tstlp_finished:
 		+tone_880
@@ -614,11 +614,11 @@ tstlp_finished:
 tstlp_error_ram_fucked:
 
 ;RAM test from dead test cartridge starts here
-		LDX	#$15
-		LDY	#0
 
-loc_E18F:				; CODE XREF: sub_E000+1C0j
-					; sub_E000+254j
+		LDX	#$15 ; X is bit pattern iterator
+		LDY	#0   ; Y is write loop counter
+
+ram_write_lp:
 		LDA	ram_test_data,X
 		STA	$100,Y
 		STA	$200,Y
@@ -636,147 +636,147 @@ loc_E18F:				; CODE XREF: sub_E000+1C0j
 		STA	$E00,Y
 		STA	$F00,Y
 		INY
-		BNE	loc_E18F
-		TXA
+		BNE	ram_write_lp
+		
+		TXA ; save bit pattern iterator
+		
 		LDX	#0
 		LDY	#0
-
-loc_E1C7:				; CODE XREF: sub_E000+1C8j
-					; sub_E000+1CBj
+ram_wait_lp:
 		DEY
-		BNE	loc_E1C7
+		BNE	ram_wait_lp
 		DEX
-		BNE	loc_E1C7
-		TAX
+		BNE	ram_wait_lp
+		
+		TAX ; restore bit pattern iterator
 
-loc_E1CE:				; CODE XREF: sub_E000+249j
+ram_read_lp:
 		LDA	$100,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$200,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$300,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$400,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$500,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$600,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$700,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$800,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$900,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$A00,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$B00,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$C00,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$D00,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$E00,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		LDA	$F00,Y
 		CMP	ram_test_data,X
-		BNE	loc_E24C
+		BNE	ram_test_fail
 		INY
-		BEQ	loc_E24F
-		JMP	loc_E1CE
+		BEQ	ram_read_lp_finished
+		JMP	ram_read_lp
 ; ---------------------------------------------------------------------------
 
-loc_E24C:				; CODE XREF: sub_E000+1D4j
-					; sub_E000+1DCj ...
-		JMP	loc_E25A
+ram_test_fail: ; we need to have this trampoline or short jump would be out of range
+		JMP	ram_test_fail_1
 ; ---------------------------------------------------------------------------
 
-loc_E24F:				; CODE XREF: sub_E000+247j
-		DEX
-		BMI	loc_E257
+ram_read_lp_finished:
+		DEX             ; next bit pattern
+		BMI	ram_test_done
 
 		+tone_880
 
-		JMP	loc_E18F
+		JMP	ram_write_lp
 ; ---------------------------------------------------------------------------
 
-loc_E257:				; CODE XREF: sub_E000+250j
+ram_test_done:
 		JMP	print_screen_start
 
 
-loc_E25A:				; test failed, read value in A 
+ram_test_fail_1:				; test failed, read value in A 
 		EOR	ram_test_data,X     ; A now holds a mask of failed bits
 		
 		TAX
 		AND	#$FE ;       only bit 0 defective ?
-		BNE	loc_E267
+		BNE	check_bit_1
 		LDX	#8
-		JMP	loc_E2A5
+		JMP	ultimax_blink_start
 ; ---------------------------------------------------------------------------
 
-loc_E267:				; CODE XREF: sub_E000+260j
+check_bit_1:
 		TXA
 		AND	#$FD ;       only bit 1 defective ?
-		BNE	loc_E271
+		BNE	check_bit_2
 		LDX	#7
-		JMP	loc_E2A5
+		JMP	ultimax_blink_start
 ; ---------------------------------------------------------------------------
 
-loc_E271:				; CODE XREF: sub_E000+26Aj
+check_bit_2:
 		TXA
 		AND	#$FB ;       only bit 2 defective ?
-		BNE	loc_E27B
+		BNE	check_bit_3
 		LDX	#6
-		JMP	loc_E2A5
+		JMP	ultimax_blink_start
 ; ---------------------------------------------------------------------------
 
-loc_E27B:				; CODE XREF: sub_E000+274j
+check_bit_3:
 		TXA
 		AND	#$F7 ;       only bit 3 defective ?
-		BNE	loc_E285
+		BNE	check_bit_4
 		LDX	#5
-		JMP	loc_E2A5
+		JMP	ultimax_blink_start
 ; ---------------------------------------------------------------------------
 
-loc_E285:				; CODE XREF: sub_E000+27Ej
+check_bit_4:
 		TXA
 		AND	#$EF ;       only bit 4 defective ?
-		BNE	loc_E28F
+		BNE	check_bit_5
 		LDX	#4
-		JMP	loc_E2A5
+		JMP	ultimax_blink_start
 ; ---------------------------------------------------------------------------
 
-loc_E28F:				; CODE XREF: sub_E000+288j
+check_bit_5:
 		TXA
 		AND	#$DF ;       only bit 5 defective ?
-		BNE	loc_E299
+		BNE	check_bit_6
 		LDX	#3
-		JMP	loc_E2A5
+		JMP	ultimax_blink_start
 ; ---------------------------------------------------------------------------
 
-loc_E299:				; CODE XREF: sub_E000+292j
+check_bit_6:
 		TXA
 		AND	#$BF ;       only bit 6 defective ?
-		BNE	loc_E2A3
+		BNE	check_bit_7
 		LDX	#2
-		JMP	loc_E2A5
+		JMP	ultimax_blink_start
 ; ---------------------------------------------------------------------------
 
-loc_E2A3:				; CODE XREF: sub_E000+29Cj
+check_bit_7:
 		TXA
 		AND	#$7F ;       only bit 7 defective ?
 		BNE	bit_df_wt
@@ -788,8 +788,6 @@ bit_df_wt:
 		LDX	#9         ; more than one bit defective: 9 flashes
 
 ultimax_blink_start:
-loc_E2A5:
-
 		+flash_x
 
 
