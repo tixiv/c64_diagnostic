@@ -278,8 +278,10 @@ COLOR_GREEN = 5
 ; *************************** CODE for Cart-mode Starts here *******************************************************
 
 * = $C000   ;actually this will be at $8000
-	!binary "../third_party/C64 Diagnostic.crt",$9,$50  ;only the vectors and cbm80
-
+	!word $8009 ; vector
+	!word $8009 ; vector
+	!byte $C3, $C2, $CD, $38, $30; cbm80
+	
 * = $C009
 
 !pseudopc $8009 {
