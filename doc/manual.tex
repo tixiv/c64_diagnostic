@@ -112,7 +112,40 @@ Test Ablauf:
 	\item VIC Address test: Der RAM wird so gefüllt, dass je nach defekter Video Addressleitung (VA15, VA14, VA6, VA7)Addressleitung der Name der defekten Leitung durch den Pattern im Colorram rot erscheint VA6 und VA7 erscheinen normalerweise blau, VA14 und VA15 erscheinen nicht. Leitungen die in Ordnung sind erscheinen blau.
 
 \end{itemize}
-
+\begin{table}[h!]
+  \begin{center}
+    \caption{Blink codes for defetive RAM}
+    \label{tab:table1}
+    \begin{tabular}{c|l|l|l|l}
+      \textbf{Number of blinks} & \textbf{Problem on line} & \textbf{Normal} & \textbf{250466 (Only 2 RAMs)} & \textbf{250469 (short board)}\\
+      \hline
+      10 & A0 & U25 (74LS257) & U25 (74LS257) & U8 (PLA)\\
+      11 & A1 & U25 (74LS257) & U25 (74LS257) & U8 (PLA)\\
+      12 & A2 & U25 (74LS257) & U25 (74LS257) & U8 (PLA)\\
+      13 & A3 & U25 (74LS257) & U25 (74LS257) & U8 (PLA)\\
+      14 & A4 & U13 (74LS257) & U13 (74LS257) & U8 (PLA)\\
+      15 & A5 & U13 (74LS257) & U13 (74LS257) & U8 (PLA)\\
+      16 & A6 & U13 (74LS257) & U13 (74LS257) & U8 (PLA)\\
+      17 & A7 & U13 (74LS257) & U13 (74LS257) & U8 (PLA)\\
+      18 & A8 & U25 (74LS257) & U25 (74LS257) & U8 (PLA)\\
+      19 & A9 & U25 (74LS257) & U25 (74LS257) & U8 (PLA)\\
+      20 & A10 & U25 (74LS257) & U25 (74LS257) & U8 (PLA)\\
+      21 & A11 & U25 (74LS257) & U25 (74LS257) & U8 (PLA)\\
+      22 & A12 & U13 (74LS257) & U13 (74LS257) & U8 (PLA)\\
+      23 & A13 & U13 (74LS257) & U13 (74LS257) & U8 (PLA)\\
+      24 & A14 & U13 (74LS257) & U13 (74LS257) & U8 (PLA)\\
+      25 & A15 & U13 (74LS257) & U13 (74LS257) & U8 (PLA)\\
+      1 & D0 & U21 (RAM 4164) & U10 (RAM 50464) & U10 (RAM 41464)\\
+      2 & D1 & U9 (RAM 4164) & U10 (RAM 50464) & U10 (RAM 41464) \\
+      3 & D2 & U22 (RAM 4164) & U10 (RAM 50464) & U10 (RAM 41464) \\
+      4 & D3 & U10 (RAM 4164) & U10 (RAM 50464) & U10 (RAM 41464) \\
+      5 & D4 & U23 (RAM 4164) & U9 (RAM 50464) & U11 (RAM 41464) \\
+      6 & D5 & U11 (RAM 4164) & U9 (RAM 50464) & U11 (RAM 41464) \\
+      7 & D6 & U24 (RAM 4164) & U9 (RAM 50464) & U11 (RAM 41464) \\
+      8 & D7 & U12 (RAM 4164) & U9 (RAM 50464) & U11 (RAM 41464) \\
+    \end{tabular}
+  \end{center}
+\end{table}
 
 
 \end{document}
