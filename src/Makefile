@@ -1,5 +1,5 @@
 
-all: cart_low.bin cart_high.bin ultimate_deadtest.crt ultimate_diagnostic.crt
+all: cart_low.bin cart_high.bin ultimate_deadtest.crt ultimate_diagnostic.crt easyflash.crt
 
 
 cart_low.bin: ultimate_deadtest.bin
@@ -16,9 +16,15 @@ ultimate_diagnostic.crt: crt_header_8k ultimate_deadtest.bin
 	cat crt_header_8k > ultimate_diagnostic.crt
 	cat ultimate_deadtest.bin >> ultimate_diagnostic.crt
 
+easyflash.crt: crt_header_easyflash chip_header_easyflash cart_low.bin cart_high.bin
+	cat crt_header_easyflash   > easyflash.crt
+	cat cart_low.bin          >> easyflash.crt
+	cat chip_header_easyflash >> easyflash.crt
+	cat cart_high.bin         >> easyflash.crt
+
 ultimate_deadtest.bin: ultimate_deadtest.asm
 	acme ultimate_deadtest.asm
 	
 :PHONY clean
 clean:
-	rm -f cart_low.bin cart_high.bin ultimate_deadtest.crt ultimate_deadtest.bin
+	rm -f cart_low.bin cart_high.bin ultimate_deadtest.crt ultimate_diagnostic.crt easyflash.crt
