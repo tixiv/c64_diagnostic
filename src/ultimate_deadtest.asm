@@ -286,7 +286,9 @@ COLOR_GREEN = 5
 
 !pseudopc $8009 {
 cart_code_start:
-		lda $DF00  ;trigger io read 2 (switches banker out of ultimax mode)
+		lda $DF00  ; trigger io read 2 (switches banker out of ultimax mode on tixiv's special cartridge)
+		lda #$86
+		sta $DE02  ; set easflash to 8k mode, LED on
 		
 		+init
 		+init_vic  vic_data_cart
