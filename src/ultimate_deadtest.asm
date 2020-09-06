@@ -274,6 +274,13 @@ COLOR_GREEN = 5
 .done:
 }
 
+!macro vic_register_data {
+	!byte $00, $00, $00, $00, $00, $00, $00, $00
+	!byte $00, $00, $00, $00, $00, $00, $00, $00
+	!byte $00, $1B, $00, $00, $00, $00, $08, $00
+	!byte $12, $00, $00, $00, $00, $00, $00, $00
+	!byte $03, $01, $00, $00, $00, $00, $00, $00
+}
 
 ; *************************** CODE for Cart-mode Starts here *******************************************************
 
@@ -519,10 +526,10 @@ mylp:
 
 	
 font_data_cart:
-	!binary "../third_party/dead test.bin",$200,$0AD8
+	!binary "font.bin"
 
 vic_data_cart:
-	!binary "../third_party/dead test.bin",$28,$07C0
+	+vic_register_data
 
 welcome_text_cart:
 	!text "tixivs ultimate dead test v0.1 - cart"
@@ -619,7 +626,7 @@ tstlp_error_ram_fucked:
 		LDY	#0   ; Y is write loop counter
 
 ram_write_lp:
-		LDA	ram_test_data,X
+		LDA	ram_test_patterns,X
 		STA	$100,Y
 		STA	$200,Y
 		STA	$300,Y
@@ -652,49 +659,49 @@ ram_wait_lp:
 
 ram_read_lp:
 		LDA	$100,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$200,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$300,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$400,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$500,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$600,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$700,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$800,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$900,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$A00,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$B00,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$C00,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$D00,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$E00,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		LDA	$F00,Y
-		CMP	ram_test_data,X
+		CMP	ram_test_patterns,X
 		BNE	ram_test_fail
 		INY
 		BEQ	ram_read_lp_finished
@@ -719,7 +726,7 @@ ram_test_done:
 
 
 ram_test_fail_1:				; test failed, read value in A 
-		EOR	ram_test_data,X     ; A now holds a mask of failed bits
+		EOR	ram_test_patterns,X ; A now holds a mask of failed bits
 		
 		TAX
 		AND	#$FE ;       only bit 0 defective ?
@@ -833,26 +840,21 @@ ellp:
 		jmp cart_code_start
 		JMP print_screen_start
 
-		
-
-
-
-
-
  * = $F000
 
 font_data_ultimax:
-		!binary "../third_party/dead test.bin",$200,$0AD8
+		!binary "font.bin"
 
 vic_data_ultimax:
-		!binary "../third_party/dead test.bin",$28,$07C0
+	+vic_register_data
 
 welcome_text:
 	!text "tixivs ultimate dead test v0.1 - ultimax"
 	!byte 0
 	
-ram_test_data:
-		!binary "../third_party/dead test.bin",$16,$07F7
+ram_test_patterns:		
+		!byte $00, $55, $AA, $FF, $01, $02, $04, $08, $10, $20, $40, $80
+		!byte $FE, $FD, $FB, $F7, $EF, $DF, $BF, $7F, $00, $05
 
 * = $FFFA
 	!byte $00, $e0, $00, $e0, $00, $e0
