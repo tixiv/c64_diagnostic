@@ -27,4 +27,4 @@ ultimate_deadtest.bin: ultimate_deadtest.asm
 	
 :PHONY clean
 clean:
-	rm -f cart_low.bin cart_high.bin ultimate_deadtest.crt ultimate_diagnostic.crt easyflash.crt
+	rm -f ultimate_deadtest.bin cart_low.bin cart_high.bin ultimate_deadtest.crt ultimate_diagnostic.crt easyflash.crt
