@@ -180,7 +180,7 @@ COLOR_GREEN = 5
 		
 		tax
 		
-.loc_E2A6:           ;set white
+.flash_x_lp:           ;set white
 		LDA	#1
 		STA	$D020
 
@@ -199,7 +199,40 @@ COLOR_GREEN = 5
 		
 		TAX
 		DEX
-		BNE .loc_E2A6
+		BNE .flash_x_lp
+}
+
+; flash .times times. Unrolled loop.
+; the value of X is preserved.
+!macro flash .times {
+	lda	#0
+	sta $D020 	; set black
+	
+	txa
+	+delay 0
+	+delay 0
+	+delay 0
+	+delay 0
+		
+	!for .i, 1, .times {
+		ldx	#1
+		stx	$D020 ;set white
+
+		tax
+		+tone_220		
+		txa
+		
+		+delay $7f
+		
+		; set black
+		ldx	#0
+		stx $D020
+		
+		+delay $7f
+		+delay 0
+	}
+
+	tax
 }
 
 !macro wrtlp .target, .value {
@@ -608,7 +641,9 @@ sub_E000:
 		jmp tstlp_finished
 
 tstlp_error:
-		JMP	ultimax_blink_start
+		+flash_x
+
+		JMP	print_screen_start
 		
 tstlp_finished:
 		+tone_880
@@ -727,77 +762,78 @@ ram_test_done:
 
 ram_test_fail_1:				; test failed, read value in A 
 		EOR	ram_test_patterns,X ; A now holds a mask of failed bits
-		
-		TAX
-		AND	#$FE ;       only bit 0 defective ?
-		BNE	check_bit_1
-		LDX	#8
-		JMP	ultimax_blink_start
+
+		TAX ; X register holds failed bits
+				
+		AND	#$01 ;       bit 0 defective ?
+		BNE	bit_0_error
+		jmp check_bit_1
+bit_0_error:
+		+flash 8
 ; ---------------------------------------------------------------------------
 
 check_bit_1:
 		TXA
-		AND	#$FD ;       only bit 1 defective ?
-		BNE	check_bit_2
-		LDX	#7
-		JMP	ultimax_blink_start
+		AND	#$02 ;       bit 1 defective ?
+		BNE	bit_1_error
+		jmp check_bit_2
+bit_1_error:
+		+flash 7
 ; ---------------------------------------------------------------------------
 
 check_bit_2:
 		TXA
-		AND	#$FB ;       only bit 2 defective ?
-		BNE	check_bit_3
-		LDX	#6
-		JMP	ultimax_blink_start
+		AND	#$04 ;       bit 2 defective ?
+		BNE	bit_2_error
+		jmp check_bit_3
+bit_2_error:
+		+flash 6
 ; ---------------------------------------------------------------------------
 
 check_bit_3:
 		TXA
-		AND	#$F7 ;       only bit 3 defective ?
-		BNE	check_bit_4
-		LDX	#5
-		JMP	ultimax_blink_start
+		AND	#$08 ;       bit 3 defective ?
+		BNE	bit_3_error
+		jmp check_bit_4
+bit_3_error:
+		+flash 5
 ; ---------------------------------------------------------------------------
 
 check_bit_4:
 		TXA
-		AND	#$EF ;       only bit 4 defective ?
-		BNE	check_bit_5
-		LDX	#4
-		JMP	ultimax_blink_start
+		AND	#$10 ;       bit 4 defective ?
+		BNE	bit_4_error
+		jmp check_bit_5
+bit_4_error:
+		+flash 4
 ; ---------------------------------------------------------------------------
 
 check_bit_5:
 		TXA
-		AND	#$DF ;       only bit 5 defective ?
-		BNE	check_bit_6
-		LDX	#3
-		JMP	ultimax_blink_start
+		AND	#$20 ;       bit 5 defective ?
+		BNE	bit_5_error
+		jmp check_bit_6
+bit_5_error:
+		+flash 3
 ; ---------------------------------------------------------------------------
 
 check_bit_6:
 		TXA
-		AND	#$BF ;       only bit 6 defective ?
-		BNE	check_bit_7
-		LDX	#2
-		JMP	ultimax_blink_start
+		AND	#$40 ;       bit 6 defective ?
+		BNE	bit_6_error
+		jmp check_bit_7
+bit_6_error:
+		+flash 2
 ; ---------------------------------------------------------------------------
 
 check_bit_7:
 		TXA
-		AND	#$7F ;       only bit 7 defective ?
-		BNE	bit_df_wt
-		LDX	#1
-		JMP	ultimax_blink_start
+		AND	#$80 ;       bit 7 defective ?
+		BEQ	bit_7_okay
+		+flash 1
+bit_7_okay:
+		jmp print_screen_start
 ; ---------------------------------------------------------------------------
-
-bit_df_wt:
-		LDX	#9         ; more than one bit defective: 9 flashes
-
-ultimax_blink_start:
-		+flash_x
-
-
 print_screen_start:
 		+clear_screen
 		+copy_font font_data_ultimax, $800
