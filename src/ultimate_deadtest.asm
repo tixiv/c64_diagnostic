@@ -244,31 +244,56 @@ COLOR_GREEN = 5
 		bne .wrtlp_1
 }
 
-!macro tstlp .target, .value, .errorjmp, .errorcode {
+!macro pop_count {
+	ldx #$00
+	!for .i, 0, 7 {
+		ror	
+		bcc +
+		inx
++:
+	}
+	txa
+}
+
+!macro tstlp .target, .value, .errorjmp, .errorcode, .ram_error_jmp {
 		ldy #$00
 .tstlp_1:
 		lda #.value
 		cmp .target
 		beq .tstlp_wt
-		ldx #.errorcode
+		
+		eor .target    ; A holds mask of failed bits
+		tay            ; save it in Y
+		+pop_count
+		
+		clc
+		cmp #4         ; up to 3 defective bits ?
+		bcc .ram_error ; probably we have bad RAM address line(s) and not multiplexer failure
+		
+		ldx #.errorcode ; 4 or more: probably addres multiplexer defective or Addres line stuck
 		jmp .errorjmp
+.ram_error:
+		ldx #.errorcode
+		tya            ; restore mask of failed bits
+		jmp .ram_error_jmp		
+		
 .tstlp_wt:
 		iny
 		bne .tstlp_1
 }
 
-!macro mirror_test .tst_adr, .num_bits, .error_jmp, .fucked_jmp {
+!macro mirror_test .tst_adr, .num_bits, .error_jmp, .fucked_jmp, .ram_error_jmp {
 		;init last ram location 256 times
 		+wrtlp .tst_adr, $00
 				
 		;test 256 times if value is valid
-		+tstlp .tst_adr, $00, .fucked_jmp, 9 ; 9 blinks means ram fucked 
+		+tstlp .tst_adr, $00, .fucked_jmp, 9, .ram_error_jmp ; 9 blinks means ram fucked 
 		
 		;set different value to each possible mirror ram location
 		;and test if original value was changed
 	!for .bit, 0, .num_bits-1 {
 			+wrtlp .tst_adr  XOR (1 << (.bit)), $FF
-			+tstlp .tst_adr, $00, .error_jmp, .bit+10 ;A0 = 10 blinks .... A15 = 25 blinks
+			+tstlp .tst_adr, $00, .error_jmp, .bit+10, .ram_error_jmp ;A0 = 10 blinks .... A15 = 25 blinks
 	}
 }
 
@@ -356,8 +381,11 @@ cart_code_start:
 		sty $d40B ;ton aus 3
 		+delay 0
 
-		+mirror_test $7FFF, 16, mirror_error, mirror_error
+		; FIXME: implement blinking out RAM chips for RAM errors
+		+mirror_test $7FFF, 16, mirror_error, mirror_error, mirror_error
 
+		; TODO: do full RAM test
+		
 		+tone_880
 		+delay 0
 		jmp wt1
@@ -636,7 +664,7 @@ sub_E000:
 		+delay 0
 		sty $d40B ;ton aus 3
 
-		+mirror_test $fff, 12, tstlp_error, tstlp_error_ram_fucked
+		+mirror_test $fff, 12, tstlp_error, tstlp_error_ram_fucked, ram_test_fail_from_mirror_test
 
 		jmp tstlp_finished
 
@@ -763,6 +791,7 @@ ram_test_done:
 ram_test_fail_1:				; test failed, read value in A 
 		EOR	ram_test_patterns,X ; A now holds a mask of failed bits
 
+ram_test_fail_from_mirror_test:
 		TAX ; X register holds failed bits
 				
 		AND	#$01 ;       bit 0 defective ?
@@ -876,7 +905,7 @@ ellp:
 		jmp cart_code_start
 		JMP print_screen_start
 
- * = $F000
+ * = $FC00
 
 font_data_ultimax:
 		!binary "font.bin"
