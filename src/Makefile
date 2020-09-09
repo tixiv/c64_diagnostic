@@ -14,9 +14,9 @@ ultimate_deadtest.crt: crt_header_easyflash chip_header_easyflash cart_low.bin c
 	cat chip_header_easyflash >> ultimate_deadtest.crt
 	cat cart_high.bin         >> ultimate_deadtest.crt
 
-ultimate_deadtest.bin: ultimate_deadtest.asm
-	acme ultimate_deadtest.asm
-	
+ultimate_deadtest.bin: ultimate_deadtest.asm macros.asm
+	acme ultimate_deadtest.asm4
+
 :PHONY clean
 clean:
 	rm -f ultimate_deadtest.bin cart_low.bin cart_high.bin ultimate_deadtest.crt
