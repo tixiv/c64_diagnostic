@@ -7,6 +7,7 @@
 
 !convtab scr ;scr konvertiert zu C64 Bildschirmzeichen.
 
+unittest=0
 !source "macros.asm"
 
 ; *************************** CODE for Cart-mode Starts here *******************************************************

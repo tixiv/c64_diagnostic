@@ -1,6 +1,8 @@
 COLOR_RED = 2
 COLOR_GREEN = 5
 
+; delay for some time given as parameter.
+; keps state of A
 !macro delay .time {
 		ldx #.time
 		ldy #0
@@ -250,6 +252,8 @@ COLOR_GREEN = 5
 		bne .wrtlp_1
 }
 
+; returns pop count of A in A.
+; Y register is kept in tact.
 !macro pop_count {
 	ldx #$00
 	!for .i, 0, 7 {
@@ -291,7 +295,11 @@ COLOR_GREEN = 5
 !macro mirror_test .tst_adr, .num_bits, .error_jmp, .fucked_jmp, .ram_error_jmp {
 		;init last ram location 256 times
 		+wrtlp .tst_adr, $00
-				
+		
+		!if unittest {
+			jsr unittest_fuck_ram_1
+		}
+		
 		;test 256 times if value is valid
 		+tstlp .tst_adr, $00, .fucked_jmp, 9, .ram_error_jmp ; 9 blinks means ram fucked 
 		
@@ -299,6 +307,11 @@ COLOR_GREEN = 5
 		;and test if original value was changed
 	!for .bit, 0, .num_bits-1 {
 			+wrtlp .tst_adr  XOR (1 << (.bit)), $FF
+			
+			!if unittest {
+				jsr unittest_fuck_ram_2
+			}
+			
 			+tstlp .tst_adr, $00, .error_jmp, .bit+10, .ram_error_jmp ;A0 = 10 blinks .... A15 = 25 blinks
 	}
 }
