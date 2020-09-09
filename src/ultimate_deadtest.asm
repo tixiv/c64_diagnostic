@@ -104,6 +104,21 @@ COLOR_GREEN = 5
 		STA	$DD0E
 }
 
+!macro cia_test .base_addr {
+		lda #$00
+		sta .base_addr + 2 ; port a input
+		sta .base_addr + 3 ; port b input
+		sta .base_addr     ; port a would write 0s
+		sta .base_addr + 1 ; port b would write 0s
+		
+		+delay 2
+		
+		lda 
+		
+		
+}
+
+
 !macro sid_init {
 		lda #15
 		sta $d418   ;lautstärke
@@ -547,44 +562,6 @@ basic_test_end:
 		
 		
 		jmp cart_code_start
-		
-		
-		;+print $0400 + 6*40, text_cia_u1_test
-		+tone_440
-		
-		lda #$FF
-		sta $DC00
-		sta $DC01
-		sta $DC02
-		sta $DC03
-		
-		+delay $20
-		
-		lda $dc00
-		cmp #$FF
-		beq cia1_test_wt
-		
-		
-
-cia1_test_wt:
-		
-		
-				
-		
-		
-		
-		
-		
-		jmp cart_code_start
-		
-		
-		
-			
-mylp:
-		jmp mylp
-
-
-
 	
 font_data_cart:
 	!binary "font.bin"
