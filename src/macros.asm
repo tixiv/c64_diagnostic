@@ -210,9 +210,8 @@ COLOR_GREEN = 5
 		BNE .flash_x_lp
 }
 
-; flash .times times. Unrolled loop.
 ; the value of X is preserved.
-!macro flash .times {
+!macro flash_begin {
 	lda	#0
 	sta $D020 	; set black
 	
@@ -221,26 +220,67 @@ COLOR_GREEN = 5
 	+delay 0
 	+delay 0
 	+delay 0
-		
-	!for .i, 1, .times {
-		ldx	#1
-		stx	$D020 ;set white
+	tax
+}
 
-		tax
-		+tone_220		
-		txa
-		
-		+delay $7f
-		
-		; set black
-		ldx	#0
-		stx $D020
-		
-		+delay $7f
-		+delay 0
-	}
+; flash one time
+; the value of X is preserved.
+!macro flash {
+	
+	lda	#1
+	sta	$D020 ;set white
+
+	+tone_220	
+	
+	txa
+	
+	+delay $7f
+	
+	; set black
+	ldx	#0
+	stx $D020
+	
+	+delay $7f
+	+delay 0
 
 	tax
+}
+
+; A register must hold mask of failed bits.
+; The mapping of bit (ram chip) to flashes is taken 
+; from original deadtest cartridge.
+; Bit 7 set -> 1 flash
+; Bit 6 set -> 2 flashes
+; Bit 5 set -> 3 flashes
+; Bit 4 set -> 4 flashes
+; Bit 3 set -> 5 flashes
+; Bit 2 set -> 6 flashes
+; Bit 1 set -> 7 flashes
+; Bit 0 set -> 8 flashes
+!macro flash_failed_rams {
+.start:
+			; A register needs to hold failed bits
+		TAX ; X register holds failed bits now
+		bne begin_flash ; some bits defective? begin flashing
+		
+		jmp .done ; no more failed bits
+		
+begin_flash:
+		+flash_begin
+		
+	!for .i, 7, 0 {
+		+flash
+		TXA
+		AND	#(1<<.i)  ; bit .i defective ?
+		beq +         ; no: flash again
+		
+		TXA           ; yes
+		AND #((1<<.i) XOR $FF) ; clear it
+		jmp .start    ; and check rest of bits		
++
+	}
+
+.done:
 }
 
 !macro wrtlp .target, .value {
@@ -265,7 +305,7 @@ COLOR_GREEN = 5
 	txa
 }
 
-!macro tstlp .target, .value, .errorjmp, .errorcode, .ram_error_jmp {
+!macro tstlp .target, .value, .addr_error_jmp, .errorcode, .ram_error_jmp {
 		ldy #$00
 .tstlp_1:
 		lda #.value
@@ -281,7 +321,8 @@ COLOR_GREEN = 5
 		bcc .ram_error ; probably we have bad RAM address line(s) and not multiplexer failure
 		
 		ldx #.errorcode ; 4 or more: probably addres multiplexer defective or Addres line stuck
-		jmp .errorjmp
+		tya
+		jmp .addr_error_jmp
 .ram_error:
 		ldx #.errorcode
 		tya            ; restore mask of failed bits
@@ -292,7 +333,7 @@ COLOR_GREEN = 5
 		bne .tstlp_1
 }
 
-!macro mirror_test .tst_adr, .num_bits, .error_jmp, .fucked_jmp, .ram_error_jmp {
+!macro mirror_test .tst_adr, .num_bits, .addr_error_jmp, .ram_error_jmp {
 		;init last ram location 256 times
 		+wrtlp .tst_adr, $00
 		
@@ -301,7 +342,7 @@ COLOR_GREEN = 5
 		}
 		
 		;test 256 times if value is valid
-		+tstlp .tst_adr, $00, .fucked_jmp, 9, .ram_error_jmp ; 9 blinks means ram fucked 
+		+tstlp .tst_adr, $00, .ram_error_jmp, 9, .ram_error_jmp ; 9 blinks means ram fucked 
 		
 		;set different value to each possible mirror ram location
 		;and test if original value was changed
@@ -312,7 +353,7 @@ COLOR_GREEN = 5
 				jsr unittest_fuck_ram_2
 			}
 			
-			+tstlp .tst_adr, $00, .error_jmp, .bit+10, .ram_error_jmp ;A0 = 10 blinks .... A15 = 25 blinks
+			+tstlp .tst_adr, $00, .addr_error_jmp, .bit+10, .ram_error_jmp ;A0 = 10 blinks .... A15 = 25 blinks
 	}
 }
 
