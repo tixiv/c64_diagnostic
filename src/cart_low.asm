@@ -150,17 +150,19 @@ vlp:
 
 		+print $8400 + 120, text_va15_stuck_high
 		+print $C400 + 120, text_va15_stuck_high
-		
+
+!set display_line = 3
 		; this one allways passed when we get to here
-		+print $0400 + 3*40, text_ram_test_0_1000
-		+print_in_color $400, 3*40 + 20, COLOR_GREEN, text_ok
+		+print $0400 + display_line*40, text_ram_test_0_1000
+		+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
 
 ; -------------- CRC init --------------------------------------------
 CRC = $6 ; zeropage
 		jsr crc32_init
 		
-; -------------- Kernal test -----------------------------------------		
-		+print $0400 + 4*40, text_kernal_rom_test
+; -------------- Kernal test -----------------------------------------	
+!set display_line = display_line + 1	
+		+print $0400 + display_line*40, text_kernal_rom_test
 		+tone_440
 				
 		+crc32 CRC, $e000, 32
@@ -191,7 +193,7 @@ test_01_kernal:
 		bpl -
 
 kernal_test_ok:
-		+print_in_color $400, 4*40 + 20, COLOR_GREEN, text_ok
+		+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
 		+tone_880
 		jmp kernal_test_end
 
@@ -203,14 +205,16 @@ expected_crc_kernal_901227_01:
 		!byte $fa, $82 ,$e7 ,$dc
 		
 kernal_test_failed:
-		+print_in_color $0400, 180, COLOR_RED ,text_fail
+		+print_in_color $0400, display_line*40+20, COLOR_RED ,text_fail
 		+tone_220
 		
 kernal_test_end:
 		+delay 0
 
-; -------------- Basic test -----------------------------------------		
-		+print $0400 + 5*40, text_basic_rom_test
+; -------------- Basic test -----------------------------------------
+!set display_line = display_line + 1
+
+		+print $0400 + display_line*40, text_basic_rom_test
 		+tone_440
 		
 		+crc32 CRC, $a000, 32
@@ -222,7 +226,7 @@ kernal_test_end:
 		dey
 		bpl -
 
-		+print_in_color $400, 5*40 + 20, COLOR_GREEN, text_ok
+		+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
 		+tone_880
 		jmp basic_test_end
 
@@ -231,14 +235,16 @@ expected_crc_basic_901226_01:
 
 basic_test_failed:
 
-		+print_in_color $0400, 5*40 + 20, COLOR_RED ,text_fail
+		+print_in_color $0400, display_line*40 + 20, COLOR_RED ,text_fail
 		+tone_220
 		
 basic_test_end:
 		+delay 0
 		
-; -------------- Char ROM test --------------------------------------		
-		+print $0400 + 6*40, text_char_rom_test
+; -------------- Char ROM test --------------------------------------
+!set display_line = display_line + 1
+
+		+print $0400 + display_line*40, text_char_rom_test
 		+tone_440
 		
 		lda #$03
@@ -256,7 +262,7 @@ basic_test_end:
 		dey
 		bpl -
 
-		+print_in_color $400, 6*40 + 20, COLOR_GREEN, text_ok
+		+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
 		+tone_880
 		jmp char_test_end
 
@@ -265,15 +271,189 @@ expected_crc_char_901225_01:
 
 char_test_failed:
 
-		+print_in_color $0400, 6*40 + 20, COLOR_RED ,text_fail
+		+print_in_color $0400, display_line*40 + 20, COLOR_RED ,text_fail
 		+tone_220
 		
 char_test_end:
 		+delay 0
 
-; -------------- RAM test $1000-$FFFF ----------------------------------
+; ------------- CIA test $DC00 ------------------------------------------
+!zone {
+!set display_line = display_line + 1
+.base_addr = $DC00
 
-	+print $0400 + 7*40, text_ram_test_1000_FFFF
+	+print $0400 + display_line*40, text_cia_test_dc00
+	+tone_440
+
+	lda #$00
+	sta .base_addr + 2 ; port a input
+	sta .base_addr + 3 ; port b input
+	sta .base_addr     ; port a would write 0s
+	sta .base_addr + 1 ; port b would write 0s
+	
+	+delay 1
+
+	lda .base_addr
+	cmp #$ff  ; port a all high?
+	bne .port_a_stuck_low
+	lda .base_addr+1
+	cmp #$ff  ; port b all high?
+	bne .port_b_stuck_low
+
+	lda #$ff
+	sta .base_addr     ; port a would write 1s
+	sta .base_addr + 1 ; port b would write 1s
+	sta .base_addr + 2 ; port a output
+	sta .base_addr + 3 ; port b output
+
+	+delay 1
+	
+	lda .base_addr
+	cmp #$ff  ; port a all high?
+	bne .port_a_stuck_low
+	lda .base_addr+1
+	cmp #$ff  ; port b all high?
+	bne .port_b_stuck_low
+
+	lda #$00
+	sta .base_addr     ; port a writes 0s
+	sta .base_addr + 1 ; port b writes 0s
+
+	+delay 1
+
+	lda .base_addr
+	cmp #$00  ; port a all low?
+	bne .port_a_stuck_high
+	lda .base_addr+1
+	cmp #$00  ; port b all low?
+	bne .port_b_stuck_high
+	
+	+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
+	+tone_880
+
+	jmp .done
+	
+.port_a_stuck_low:
+.port_b_stuck_low:
+.port_a_stuck_high:
+.port_b_stuck_high:
+	+print_in_color $0400, display_line*40 + 20, COLOR_RED ,text_fail
+	+tone_220
+
+	
+.done:
+	+delay 0
+}
+
+!zone {
+!set display_line = display_line + 1
+.base_addr = $DD00
+
+	+print $0400 + display_line*40, text_cia_test_dd00
+	+tone_440
+
+	lda #$00
+	sta .base_addr + 3 ; port b input
+	sta .base_addr + 1 ; port b would write 0s
+	
+	+delay 1
+	
+	lda .base_addr + 1
+	cmp #$ff  ; port b all high?
+	bne .port_b_stuck_low
+
+	lda #$ff
+	sta .base_addr + 1 ; port b would write 1s
+	sta .base_addr + 3 ; port b output
+
+	+delay 1
+	
+	lda .base_addr + 1
+	cmp #$ff  ; port b all high?
+	bne .port_b_stuck_low
+
+	lda #$00
+	sta .base_addr + 1 ; port b writes 0s
+
+	+delay 1
+
+	lda .base_addr + 1
+	cmp #$00  ; port b all low?
+	bne .port_b_stuck_high
+	
+	jmp .test_port_a
+
+.port_b_stuck_low:
+.port_b_stuck_high:
+	jmp .fail_exit
+
+.test_port_a:	
+	lda #$00
+	sta .base_addr + 2 ; port a input
+	sta .base_addr     ; port a would write 0s
+
+	+delay 1
+	
+	lda .base_addr
+	and #$3f  ; ignore Data and Clk because they would be 0 because of inverter
+	cmp #$3f  ; port a all high? 
+	bne .port_a_stuck_low
+
+	lda #$3f
+	sta .base_addr     ; port a would write 1s
+	sta .base_addr + 2 ; port a output
+
+	+delay 1
+
+	lda .base_addr
+	and #$3f  ; ignore Data and Clk because they would be 0 because of inverter
+	cmp #$3f  ; port a all high? 
+	bne .port_a_stuck_low
+
+	lda .base_addr
+	and #$c0  ; check data and clock, they should be low
+	cmp #$00
+	bne .port_a_stuck_high
+	
+	lda #$00
+	sta .base_addr     ; port a writes 0s on 6 outputs
+
+	+delay 1
+
+	lda .base_addr
+	and #$3f  ; ignore Data and Clk for now
+	cmp #$00
+	bne .port_a_stuck_high
+	
+	lda .base_addr
+	and #$c0  ; check data and clock, they should be high
+	cmp #$c0
+	bne .port_a_stuck_low
+	
+	+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
+	+tone_880
+	
+	jmp .done
+	
+.port_a_stuck_low:
+.port_a_stuck_high:
+.fail_exit:
+	+print_in_color $0400, display_line*40 + 20, COLOR_RED ,text_fail
+	+tone_220
+	
+.done:
+	lda #$03  ; Set video bank to 0
+	sta $dd00
+	lda #$3f
+	sta $dd02
+	
+	+delay 0
+}
+
+; -------------- RAM test $1000-$FFFF ----------------------------------
+!set display_line = display_line + 1
+
+	+print $0400 + display_line*40, text_ram_test_1000_FFFF
 
 	; copy RAM test to $200
 	ldy #$00
@@ -282,14 +462,20 @@ char_test_end:
 	iny
 	bne -
 	
+	; execute RAM test
 	jsr $200
 	
 	cmp #$00
 	beq +
 	jmp ram_test_fail
 +
-	+print_in_color $400, 7*40 + 20, COLOR_GREEN, text_ok
+	+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
 
+	+delay 0
+
+; -----------------------------------------------------------------------
+	+delay 0
+	+delay 0
 	+delay 0
 	+delay 0
 	+delay 0
@@ -409,6 +595,10 @@ text_char_rom_test:   !text "char   rom test"
 text_ram_test_0_1000: !text "ram test 0-FFF"
 	!byte 0
 text_ram_test_1000_FFFF: !text "ram test 1000-FFFF"
+	!byte 0
+text_cia_test_dc00: !text "cia test dc00"
+	!byte 0
+text_cia_test_dd00: !text "cia test dd00"
 	!byte 0
 text_ok: !text "ok"
 	!byte 0

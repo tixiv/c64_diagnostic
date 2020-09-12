@@ -97,21 +97,6 @@ COLOR_GREEN = 5
 		STA	$DD0E
 }
 
-!macro cia_test .base_addr {
-		lda #$00
-		sta .base_addr + 2 ; port a input
-		sta .base_addr + 3 ; port b input
-		sta .base_addr     ; port a would write 0s
-		sta .base_addr + 1 ; port b would write 0s
-		
-		+delay 2
-		
-		lda 
-		
-		
-}
-
-
 !macro sid_init {
 		lda #15
 		sta $d418   ;lautstärke
