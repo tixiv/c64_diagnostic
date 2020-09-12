@@ -369,7 +369,7 @@ begin_flash:
 
 !macro ram_test .size, .ram_test_fail {
 	;RAM test from dead test cartridge starts here
-	LDX	#$15 ; X is bit pattern iterator
+	LDX	#$13 ; X is bit pattern iterator
 	LDY	#0   ; Y is write loop counter
 
 .ram_test_lp:
@@ -439,7 +439,7 @@ begin_flash:
 
 .ram_test_patterns:		
 	!byte $00, $55, $AA, $FF, $01, $02, $04, $08, $10, $20, $40, $80
-	!byte $FE, $FD, $FB, $F7, $EF, $DF, $BF, $7F, $00, $05
+	!byte $FE, $FD, $FB, $F7, $EF, $DF, $BF, $7F
 	
 .ram_test_done:
 }
