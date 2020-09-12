@@ -1,5 +1,5 @@
 
-all: cart_low.bin cart_high.bin ultimate_deadtest.crt
+all: cart_low.bin cart_high.bin tixivs_diagnostic.crt
 
 
 cart_low.bin: cart_low.asm macros.asm
@@ -8,12 +8,12 @@ cart_low.bin: cart_low.asm macros.asm
 cart_high.bin: cart_high.asm macros.asm
 	acme cart_high.asm
 
-ultimate_deadtest.crt: crt_header_easyflash chip_header_easyflash cart_low.bin cart_high.bin
-	cat crt_header_easyflash   > ultimate_deadtest.crt
-	cat cart_low.bin          >> ultimate_deadtest.crt
-	cat chip_header_easyflash >> ultimate_deadtest.crt
-	cat cart_high.bin         >> ultimate_deadtest.crt
+tixivs_diagnostic.crt: crt_header_easyflash chip_header_easyflash cart_low.bin cart_high.bin
+	cat crt_header_easyflash   > tixivs_diagnostic.crt
+	cat cart_low.bin          >> tixivs_diagnostic.crt
+	cat chip_header_easyflash >> tixivs_diagnostic.crt
+	cat cart_high.bin         >> tixivs_diagnostic.crt
 
 :PHONY clean
 clean:
-	rm -f cart_low.bin cart_high.bin ultimate_deadtest.crt
+	rm -f cart_low.bin cart_high.bin tixivs_diagnostic.crt

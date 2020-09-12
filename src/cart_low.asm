@@ -377,7 +377,7 @@ vic_data_cart:
 	+vic_register_data
 
 welcome_text_cart:
-	!text "tixivs ultimate dead test v0.1 - cart"
+	!text "tixivs diagnostic v0.1 - 8k cart mode"
 	!byte 0	
 
 text_page_0400: !text "PAGE 0400"

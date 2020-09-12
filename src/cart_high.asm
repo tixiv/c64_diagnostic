@@ -105,7 +105,7 @@ vic_data_ultimax:
 	+vic_register_data
 
 welcome_text:
-	!text "tixivs ultimate dead test v0.1 - ultimax"
+	!text "tixivs dead test v0.1 - ultimax mode"
 	!byte 0
 
 * = $FFFA
