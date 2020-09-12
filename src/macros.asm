@@ -174,42 +174,6 @@ COLOR_GREEN = 5
 		sta $d404   ;wellenform, ton an 1
 }
 
-!macro flash_x {
-		; set black
-		lda	#0
-		sta $D020
-		
-		txa
-		
-		+delay 0
-		+delay 0
-		+delay 0
-		+delay 0
-		
-		tax
-		
-.flash_x_lp:           ;set white
-		LDA	#1
-		STA	$D020
-
-		+tone_220
-		
-		TXA
-		
-		+delay $7f
-		
-		; set black
-		ldx	#0
-		stx $D020
-		
-		+delay $7f
-		+delay 0
-		
-		TAX
-		DEX
-		BNE .flash_x_lp
-}
-
 ; the value of X is preserved.
 !macro flash_begin {
 	lda	#0
@@ -244,6 +208,17 @@ COLOR_GREEN = 5
 	+delay 0
 
 	tax
+}
+
+; flash X times
+!macro flash_x {
+	+flash_begin
+	
+.flash_x_lp:
+	+flash
+	
+	dex
+	bne .flash_x_lp
 }
 
 ; A register must hold mask of failed bits.

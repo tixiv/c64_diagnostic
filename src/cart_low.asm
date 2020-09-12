@@ -4,6 +4,7 @@
 
 unittest=0
 !source "macros.asm"
+!source "crc32.asm"
 
 ; *************************** CODE for Cart-mode Starts here *******************************************************
 
@@ -53,9 +54,9 @@ cart_code_start:
 		+delay 0
 		+delay 0
 		
-		+ram_test $8000, ram_test_fail
+		+ram_test $1000, ram_test_fail
 		
-		jmp wt1
+		jmp ram_test_finished
 		
 ram_test_fail:
 		+flash_failed_rams
@@ -65,10 +66,7 @@ addr_error:
 		+flash_x
 		jmp cart_code_start
 
-wt1:
-		; TODO: test RAM from $8000 to $ffff
-
-
+ram_test_finished:
 		+copy_font font_data_cart, $0800
 		+copy_font font_data_cart, $4800
 		+copy_font font_data_cart, $8800
@@ -146,8 +144,6 @@ vlp:
 		+print $0400 + 120, text_empty ;va15 stuck low löschen
 		+print $4400 + 120, text_empty ;va15 stuck low löschen
 
-
-
 		;videobank 0 selektieren
 		lda #3
 		sta $dd00 ; daten ausgang port a
@@ -155,29 +151,52 @@ vlp:
 		+print $8400 + 120, text_va15_stuck_high
 		+print $C400 + 120, text_va15_stuck_high
 
+; -------------- CRC init --------------------------------------------
+		jsr crc32_init
 		
+; -------------- Kernal test -----------------------------------------		
 		+print $0400 + 160, text_kernal_rom_test
 		+tone_440
+				
+		+crc32 $6, $e000, 32
+
+		ldy #$03
+-		lda $6,y
+		cmp expected_crc_kernal_901227_03,y
+		bne test_02_kernal
+		dey
+		bpl -
+		jmp kernal_test_ok
+
+test_02_kernal:
+		ldy #$03
+-		lda $6,y
+		cmp expected_crc_kernal_901227_02,y
+		bne test_01_kernal
+		dey
+		bpl -
+		jmp kernal_test_ok
 		
-		lda #$00
-		ldx #$00
-kernal_tst_lp:
-		!for .bank, 0, 31 {
-			eor $E000 + (.bank) * $100, x
-		}
-		clc
-		rol
-		adc #$00
-		inx
-		bne kernal_tst_lp
-		
-		cmp #$08
+test_01_kernal:
+		ldy #$03
+-		lda $6,y
+		cmp expected_crc_kernal_901227_01,y
 		bne kernal_test_failed
-		
+		dey
+		bpl -
+
+kernal_test_ok:
 		+print_in_color $400, 4*40 + 20, COLOR_GREEN, text_ok
 		+tone_880
 		jmp kernal_test_end
 
+expected_crc_kernal_901227_03:
+		!byte $c7, $e7 ,$e3 ,$db
+expected_crc_kernal_901227_02:
+		!byte $b3, $87 ,$c6 ,$a5
+expected_crc_kernal_901227_01:
+		!byte $fa, $82 ,$e7 ,$dc
+		
 kernal_test_failed:
 
 		+print_in_color $0400, 180, COLOR_RED ,text_fail
@@ -185,29 +204,26 @@ kernal_test_failed:
 		
 kernal_test_end:
 		+delay 0
-		
-		
+
+; -------------- Basic test -----------------------------------------		
 		+print $0400 + 200, text_basic_rom_test
 		+tone_440
+		
+		+crc32 $6, $a000, 32
 
-		lda #$00
-		ldx #$00
-basic_tst_lp:
-		!for .bank, 0, 31 {
-			eor $A000 + (.bank) * $100, x
-		}
-		clc
-		rol
-		adc #$00
-		inx
-		bne basic_tst_lp
-		
-		cmp #$95
+		ldy #$03
+-		lda $6,y
+		cmp expected_crc_basic_901226_01,y
 		bne basic_test_failed
-		
+		dey
+		bpl -
+
 		+print_in_color $400, 5*40 + 20, COLOR_GREEN, text_ok
 		+tone_880
 		jmp basic_test_end
+
+expected_crc_basic_901226_01:
+		!byte $17, $d1, $33, $f8		
 
 basic_test_failed:
 
@@ -220,9 +236,10 @@ basic_test_end:
 		+delay 0
 		+delay 0
 		
-		
 		jmp cart_code_start
-	
+
++crc32_impl $6, $C000
+
 font_data_cart:
 	!binary "font.bin"
 

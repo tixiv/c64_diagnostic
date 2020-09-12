@@ -6,7 +6,6 @@ unittest=0
 !source "macros.asm"
 
 * =  $E000
-
 		+init
 		+init_vic  vic_data_ultimax
 		+init_cias

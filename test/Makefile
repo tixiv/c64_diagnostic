@@ -1,7 +1,7 @@
 
 all: unit_tests.prg
 
-unit_tests.prg: unit_tests.asm ../src/macros.asm
+unit_tests.prg: unit_tests.asm ../src/macros.asm ../src/crc32.asm
 	acme unit_tests.asm
 	
 :PHONY clean

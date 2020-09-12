@@ -5,9 +5,6 @@
 
 !convtab scr ;scr konvertiert zu C64 Bildschirmzeichen.
 
-unittest=1
-!source "../src/macros.asm"
-
 ; Init
 +c64unit
 
@@ -19,9 +16,14 @@ unittest=1
 +examineTest test_mirror_test_error_1
 +examineTest test_mirror_test_error_2
 +examineTest test_mirror_test_error_3
++examineTest test_crc32
 
 ; If this point is reached, there were no assertion fails
 +c64unitExit
+
+unittest=1
+!source "../src/macros.asm"
+!source "../src/crc32.asm"
 
 !zone {
 .m
@@ -101,10 +103,9 @@ unittest_fuck_ram_2:
 	lda #>.fuck_ram_2
 	sta unittest_fuck_ram_2 + 2
 	
-	+mirror_test $CFFF, 12, .error_jmp, .fucked_jmp, .ram_error_jmp
+	+mirror_test $CFFF, 12, .addr_error_jmp, .ram_error_jmp
 
-.error_jmp:	
-.fucked_jmp:
+.addr_error_jmp:	
 	; test failed
 	lda #33
 	+assertEqualToA 44 ,.m, .me
@@ -162,16 +163,15 @@ test_mirror_test_ram_eror_2:
 	lda #$00
 	sta .fuck_trigger
 	
-	+mirror_test .tst_addr, 12, .error_jmp, .fucked_jmp, .ram_error_jmp
+	+mirror_test .tst_addr, 12, .addr_error_jmp, .ram_error_jmp
 
 .ram_error_jmp:
-.fucked_jmp:
 	; test failed
 	lda #33
 	+assertEqualToA 44 ,.m, .me
 	rts
 
-.error_jmp:	
+.addr_error_jmp:	
 	; this error should have been detected, $01 is mask of bad RAMS
 	+assertEqualToX .fuck_addr_line + 10 ,.m, .me
 	rts
@@ -216,4 +216,27 @@ test_mirror_test_error_2:
 .me
 test_mirror_test_error_3:
 	+test_mirror_test_error $F0, 8 ,.m, .me
+}
+
++crc32_impl $6, $C400
+
+!zone {
+.m
+    !scr "test_crc32"
+.me
+.CRC = $6
+test_crc32:
+	jsr crc32_init
+
+	+crc32 .CRC, .test_vec, 2
+	
+	+assertMemoryEqual .expected_crc, .CRC, 4, .m, .me
+	
+	rts
+.test_vec:
+	!for .i, 0, 511 {
+		!byte <.i
+	}
+.expected_crc:
+	!byte $76, $35, $61, $1C
 }
