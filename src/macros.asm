@@ -392,6 +392,83 @@ begin_flash:
 .done:
 }
 
+!macro ram_test .size, .ram_test_fail {
+	;RAM test from dead test cartridge starts here
+	LDX	#$15 ; X is bit pattern iterator
+	LDY	#0   ; Y is write loop counter
+
+.ram_test_lp:
+.ram_write_lp:
+	LDA	.ram_test_patterns,X
+
+	!for .i, 0, (.size / $100)-1 {
+		!if .i = 0 {
+			STA	$100 * .i + 2, Y ; don't overwrite 6510 IO port
+		} else {
+			STA	$100 * .i, Y
+		}
+	}
+
+	INY
+	BEQ +
+	jmp .ram_write_lp
+	
++
+	TXA ; save bit pattern iterator
+	+delay 0
+	TAX ; restore bit pattern iterator
+
+.ram_read_lp:
+
+	!for .j, 0, (.size / $1000)-1 {
+		!for .i, 0, 7 {
+			!if .j = 0 AND .i = 0 {
+				LDA	$1000 * .j + 2, Y
+			} else {
+				LDA	$1000 * .j + $100 * .i, Y
+			}
+			
+			CMP	.ram_test_patterns, X
+			BNE	+
+		}
+		jmp ++
++
+-
+		jmp .ram_test_fail_internal ; local trampoline
+++		
+		!for .i, 8, 15 {
+			LDA	$1000 * .j + $100 * .i, Y
+			CMP	.ram_test_patterns, X
+			BNE	-
+		}
+	}
+
+	INY
+	BEQ	.ram_read_lp_finished
+	JMP	.ram_read_lp
+; ---------------------------------------------------------------------------
+
+.ram_test_fail_internal:        ; test failed, read value in A 
+	EOR	.ram_test_patterns, X   ; A now holds a mask of failed bits
+
+	JMP	.ram_test_fail
+; ---------------------------------------------------------------------------
+
+.ram_read_lp_finished:
+	DEX             ; next bit pattern
+	BMI	.ram_test_done
+
+	+tone_880
+
+	JMP	.ram_test_lp
+
+.ram_test_patterns:		
+	!byte $00, $55, $AA, $FF, $01, $02, $04, $08, $10, $20, $40, $80
+	!byte $FE, $FD, $FB, $F7, $EF, $DF, $BF, $7F, $00, $05
+	
+.ram_test_done:
+}
+
 !macro vic_register_data {
 	!byte $00, $00, $00, $00, $00, $00, $00, $00
 	!byte $00, $00, $00, $00, $00, $00, $00, $00

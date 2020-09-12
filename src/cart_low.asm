@@ -45,21 +45,28 @@ cart_code_start:
 		sty $d40B ;ton aus 3
 		+delay 0
 
-		+mirror_test $7FFF, 16, addr_error, ram_error
+		+mirror_test $7FFF, 16, addr_error, ram_test_fail
 		
 		+tone_880
 		+delay 0
+		+delay 0
+		+delay 0
+		+delay 0
+		
+		+ram_test $8000, ram_test_fail
+		
 		jmp wt1
 		
-ram_error:
+ram_test_fail:
 		+flash_failed_rams
-		jmp wt1
+		jmp cart_code_start
 
 addr_error:
 		+flash_x
+		jmp cart_code_start
 
 wt1:
-		; TODO: do full RAM test
+		; TODO: test RAM from $8000 to $ffff
 
 
 		+copy_font font_data_cart, $0800
