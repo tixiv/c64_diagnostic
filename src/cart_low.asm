@@ -560,7 +560,7 @@ ram_test_start:
 	
 }
 		
-+crc32_impl CRC, $C000
++crc32_impl CRC, $C00
 
 font_data_cart:
 	!binary "font.bin"
