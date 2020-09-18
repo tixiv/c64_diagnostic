@@ -17,6 +17,8 @@
 +examineTest test_mirror_test_error_2
 +examineTest test_mirror_test_error_3
 +examineTest test_crc32
++examineTest test_print_hex
++examineTest test_print_string
 
 ; If this point is reached, there were no assertion fails
 +c64unitExit
@@ -239,4 +241,72 @@ test_crc32:
 	}
 .expected_crc:
 	!byte $76, $35, $61, $1C
+}
+
+!source "../src/print_routines.asm"
+
+!zone {
+.m
+    !scr "test_print_hex"
+.me
+test_print_hex:
+	+set_cursor 0, 0
+	lda #$9A
+	jsr print_hex
+
+	+assertMemoryEqual .expected_output_9A, $400, 2, .m, .me
+	
+	+assertMemoryEqual .expected_0402, CURSOR_POS_ZP, 2, .m, .me
+
+	+set_cursor 0, $FF
+	lda #$A9
+	jsr print_hex
+
+	+assertMemoryEqual .expected_output_A9, $4FF, 2, .m, .me
+
+	+assertMemoryEqual .expected_0501, CURSOR_POS_ZP, 2, .m, .me
+	
+	rts
+.expected_output_9A:
+	!scr "9A"
+.expected_output_A9:
+	!scr "A9"
+.expected_0402:
+	!word $0402
+.expected_0501:
+	!word $0501
+}
+
+!zone {
+.m
+    !scr "test_print_string"
+.me
+test_print_string:
+	+set_cursor 0, 0
+	ldx #>.test_string
+	ldy #<.test_string
+	jsr print_string
+
+	+assertMemoryEqual .test_string, $400, .test_string_e - .test_string, .m, .me
+	
+	+assertMemoryEqual .expected_0408, CURSOR_POS_ZP, 2, .m, .me
+
+	+set_cursor 0, $FC
+	ldx #>.test_string
+	ldy #<.test_string
+	jsr print_string
+
+	+assertMemoryEqual .test_string, $4FC, .test_string_e - .test_string, .m, .me
+	
+	+assertMemoryEqual .expected_0504, CURSOR_POS_ZP, 2, .m, .me
+	
+	rts
+.test_string:
+	!scr "Test 123"
+.test_string_e:
+	!byte 0
+.expected_0408:
+	!word $0408
+.expected_0504:
+	!word $0504
 }
