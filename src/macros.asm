@@ -163,7 +163,10 @@ COLOR_GREEN = 5
 !macro flash_begin {
 	lda	#0
 	sta $D020 	; set black
-	
+
+	lda #easyflash_mode
+	sta $DE02 ;easyflash LED off
+
 	txa
 	+delay 0
 	+delay 0
@@ -175,9 +178,11 @@ COLOR_GREEN = 5
 ; flash one time
 ; the value of X is preserved.
 !macro flash {
-	
 	lda	#1
 	sta	$D020 ;set white
+
+	lda #easyflash_mode + $80
+	sta $DE02 ;easyflash LED on
 
 	+tone_220	
 	
@@ -185,9 +190,11 @@ COLOR_GREEN = 5
 	
 	+delay $7f
 	
-	; set black
 	ldx	#0
-	stx $D020
+	stx $D020 ; set black
+
+	ldx #easyflash_mode
+	stx $DE02 ;easyflash LED off
 	
 	+delay $7f
 	+delay 0

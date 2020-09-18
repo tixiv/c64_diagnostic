@@ -2,7 +2,9 @@
 
 !convtab scr ;scr konvertiert zu C64 Bildschirmzeichen.
 
-unittest=0
+unittest       = 0
+easyflash_mode = $06 ; sets easflash to 8k cartridge mode
+
 !source "macros.asm"
 !source "crc32.asm"
 
@@ -17,7 +19,7 @@ unittest=0
 
 cart_code_start:
 		lda $DF00  ; trigger io read 2 (switches banker out of ultimax mode on tixiv's special cartridge)
-		lda #$86
+		lda #easyflash_mode + $80
 		sta $DE02  ; set easflash to 8k mode, LED on
 		
 		+init
@@ -44,8 +46,12 @@ cart_code_start:
 		sta $d412   ;wellenform, ton an 3
 		+delay 0
 		sty $d40B ;ton aus 3
-		+delay 0
 
+		lda #easyflash_mode
+		sta $DE02  ; set easflash LED off
+
+		+delay 0
+		
 		+mirror_test $7FFF, 16, addr_error, ram_test_fail
 		
 		+tone_880

@@ -2,10 +2,15 @@
 
 !convtab scr ;scr konvertiert zu C64 Bildschirmzeichen.
 
-unittest=0
+unittest       = 0
+easyflash_mode = $00 ; ultimax mode
+
 !source "macros.asm"
 
 * =  $E000
+		lda #easyflash_mode + $80
+		sta $DE02  ; set easflash LED on
+
 		+init
 		+init_vic  vic_data_ultimax
 		+init_cias
@@ -30,6 +35,11 @@ unittest=0
 		sta $d412   ;wellenform, ton an 3
 		+delay 0
 		sty $d40B ;ton aus 3
+		
+		lda #easyflash_mode
+		sta $DE02  ; set easflash LED off
+
+		+delay 0		
 
 		+mirror_test $fff, 12, addr_error, ram_test_fail
 
