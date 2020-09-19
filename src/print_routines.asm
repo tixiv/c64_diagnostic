@@ -2,15 +2,17 @@
 CURSOR_POS_ZP = $10
 STRING_P_ZP = $12
 
+SCREEN_ADDRESS = $400
 
 !macro set_cursor .line, .column {
-	.address = $400 + .line*40 + .column
+	.address = SCREEN_ADDRESS + .line*40 + .column
 	lda #<.address
 	sta CURSOR_POS_ZP
 	lda #>.address
 	sta CURSOR_POS_ZP+1
 }
 
+!macro print_routines_impl {
 ; print a null terminated string at X:Y to current cursor position
 print_string:
 	sty STRING_P_ZP
@@ -28,7 +30,6 @@ print_string:
 	bcc +
 	inc CURSOR_POS_ZP+1
 +	rts
-
 
 !zone {
 ; print a hex digit in A and increment cursor position
@@ -60,6 +61,10 @@ print_hex:
 	jsr .print_hex_digit
 	rts	
 }
-	
+}
 
-	
+!macro print .string{
+	ldy #<.string
+	ldx #>.string
+	jsr print_string
+}

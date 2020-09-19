@@ -7,6 +7,7 @@ easyflash_mode = $06 ; sets easflash to 8k cartridge mode
 
 !source "macros.asm"
 !source "crc32.asm"
+!source "print_routines.asm"
 
 ; *************************** CODE for Cart-mode Starts here *******************************************************
 
@@ -288,66 +289,123 @@ char_test_end:
 !set display_line = display_line + 1
 .base_addr = $DC00
 
-	+print $0400 + display_line*40, text_cia_test_dc00
+	+print $0400 + display_line*40, text_cia_1_port_a
+	+set_cursor display_line, 20
 	+tone_440
 
 	lda #$00
 	sta .base_addr + 2 ; port a input
-	sta .base_addr + 3 ; port b input
 	sta .base_addr     ; port a would write 0s
-	sta .base_addr + 1 ; port b would write 0s
+
+	+delay 1
 	
+	lda .base_addr
+	cmp #$ff  ; port a all high? 
+	beq +
+
+.port_a_stuck_low:
+	pha
+	+print text_stuck_low
+	pla
+	jsr print_hex
+	jmp .fail_exit
+
++	lda #$ff
+	sta .base_addr     ; port a would write 1s
+	sta .base_addr + 2 ; port a output
+
 	+delay 1
 
 	lda .base_addr
-	cmp #$ff  ; port a all high?
+	cmp #$ff  ; port a all high? 
 	bne .port_a_stuck_low
-	lda .base_addr+1
+	
++	lda #$00
+	sta .base_addr     ; port a writes 0s
+
+	+delay 1
+
+	lda .base_addr
+	cmp #$00
+	bne .port_a_stuck_high
+
++	+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
+	+tone_880
+	
+	jmp .port_a_done
+
+.port_a_stuck_high:
+	pha
+	+set_cursor display_line, 20
+	+print text_stuck_high
+	pla
+	jsr print_hex
+	jmp .fail_exit
+	
+.fail_exit:
+	+tone_220
+	
+.port_a_done:
+	+delay 0
+	
+	!set display_line = display_line + 1
+	+print $0400 + display_line*40, text_cia_1_port_b
+	+set_cursor display_line, 20
+	+tone_440
+
+	lda #$00
+	sta .base_addr + 3 ; port b input
+	sta .base_addr + 1 ; port b would write 0s
+	
+	+delay 1
+	
+	lda .base_addr + 1
 	cmp #$ff  ; port b all high?
 	bne .port_b_stuck_low
 
 	lda #$ff
-	sta .base_addr     ; port a would write 1s
 	sta .base_addr + 1 ; port b would write 1s
-	sta .base_addr + 2 ; port a output
 	sta .base_addr + 3 ; port b output
 
 	+delay 1
 	
-	lda .base_addr
-	cmp #$ff  ; port a all high?
-	bne .port_a_stuck_low
-	lda .base_addr+1
+	lda .base_addr + 1
 	cmp #$ff  ; port b all high?
 	bne .port_b_stuck_low
 
 	lda #$00
-	sta .base_addr     ; port a writes 0s
 	sta .base_addr + 1 ; port b writes 0s
 
 	+delay 1
 
-	lda .base_addr
-	cmp #$00  ; port a all low?
-	bne .port_a_stuck_high
-	lda .base_addr+1
+	lda .base_addr + 1
 	cmp #$00  ; port b all low?
 	bne .port_b_stuck_high
 	
 	+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
 	+tone_880
 
-	jmp .done
-	
-.port_a_stuck_low:
-.port_b_stuck_low:
-.port_a_stuck_high:
+	jmp .port_b_done
+
 .port_b_stuck_high:
-	+print_in_color $0400, display_line*40 + 20, COLOR_RED ,text_fail
+	pha
+	+set_cursor display_line, 20
+	+print text_stuck_high
+	pla
+	jsr print_hex
+	jmp .fail_exit_b
+	
+.port_b_stuck_low:
+	pha
+	+set_cursor display_line, 20
+	+print text_stuck_low
+	pla
+	jsr print_hex
+
+.fail_exit_b:
 	+tone_220
 
-	
-.done:
+.port_b_done:
 	+delay 0
 }
 
@@ -355,45 +413,10 @@ char_test_end:
 !set display_line = display_line + 1
 .base_addr = $DD00
 
-	+print $0400 + display_line*40, text_cia_test_dd00
+	+print $0400 + display_line*40, text_cia_2_port_a
+	+set_cursor display_line, 20
 	+tone_440
 
-	lda #$00
-	sta .base_addr + 3 ; port b input
-	sta .base_addr + 1 ; port b would write 0s
-	
-	+delay 1
-	
-	lda .base_addr + 1
-	cmp #$ff  ; port b all high?
-	bne .port_b_stuck_low
-
-	lda #$ff
-	sta .base_addr + 1 ; port b would write 1s
-	sta .base_addr + 3 ; port b output
-
-	+delay 1
-	
-	lda .base_addr + 1
-	cmp #$ff  ; port b all high?
-	bne .port_b_stuck_low
-
-	lda #$00
-	sta .base_addr + 1 ; port b writes 0s
-
-	+delay 1
-
-	lda .base_addr + 1
-	cmp #$00  ; port b all low?
-	bne .port_b_stuck_high
-	
-	jmp .test_port_a
-
-.port_b_stuck_low:
-.port_b_stuck_high:
-	jmp .fail_exit
-
-.test_port_a:	
 	lda #$00
 	sta .base_addr + 2 ; port a input
 	sta .base_addr     ; port a would write 0s
@@ -403,9 +426,16 @@ char_test_end:
 	lda .base_addr
 	and #$3f  ; ignore Data and Clk because they would be 0 because of inverter
 	cmp #$3f  ; port a all high? 
-	bne .port_a_stuck_low
+	beq +
 
-	lda #$3f
+.port_a_stuck_low:
+	pha
+	+print text_stuck_low
+	pla
+	jsr print_hex
+	jmp .fail_exit
+
++	lda #$3f
 	sta .base_addr     ; port a would write 1s
 	sta .base_addr + 2 ; port a output
 
@@ -419,9 +449,16 @@ char_test_end:
 	lda .base_addr
 	and #$c0  ; check data and clock, they should be low
 	cmp #$00
-	bne .port_a_stuck_high
+	beq +
 	
-	lda #$00
+	; iec stuck high
+	pha
+	+print text_iec_stuck_high
+	pla
+	jsr print_hex
+	jmp .fail_exit
+	
++	lda #$00
 	sta .base_addr     ; port a writes 0s on 6 outputs
 
 	+delay 1
@@ -434,25 +471,96 @@ char_test_end:
 	lda .base_addr
 	and #$c0  ; check data and clock, they should be high
 	cmp #$c0
-	bne .port_a_stuck_low
-	
-	+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
+	beq +
+
+	; iec stuck low
+	pha
+	+print text_iec_stuck_low
+	pla
+	jsr print_hex
+	jmp .fail_exit
+
++	+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
 	+tone_880
 	
-	jmp .done
-	
-.port_a_stuck_low:
+	jmp .port_a_done
+
 .port_a_stuck_high:
+	pha
+	+set_cursor display_line, 20
+	+print text_stuck_high
+	pla
+	jsr print_hex
+	jmp .fail_exit
+	
 .fail_exit:
-	+print_in_color $0400, display_line*40 + 20, COLOR_RED ,text_fail
 	+tone_220
 	
-.done:
+.port_a_done:
 	lda #$03  ; Set video bank to 0
 	sta $dd00
 	lda #$3f
 	sta $dd02
+	+delay 0
 	
+	!set display_line = display_line + 1
+	+print $0400 + display_line*40, text_cia_2_port_b
+	+set_cursor display_line, 20
+	+tone_440
+
+	lda #$00
+	sta .base_addr + 3 ; port b input
+	sta .base_addr + 1 ; port b would write 0s
+	
+	+delay 1
+	
+	lda .base_addr + 1
+	cmp #$ff  ; port b all high?
+	bne .port_b_stuck_low
+
+	lda #$ff
+	sta .base_addr + 1 ; port b would write 1s
+	sta .base_addr + 3 ; port b output
+
+	+delay 1
+	
+	lda .base_addr + 1
+	cmp #$ff  ; port b all high?
+	bne .port_b_stuck_low
+
+	lda #$00
+	sta .base_addr + 1 ; port b writes 0s
+
+	+delay 1
+
+	lda .base_addr + 1
+	cmp #$00  ; port b all low?
+	bne .port_b_stuck_high
+	
+	+print_in_color $400, display_line*40 + 20, COLOR_GREEN, text_ok
+	+tone_880
+
+	jmp .port_b_done
+
+.port_b_stuck_high:
+	pha
+	+set_cursor display_line, 20
+	+print text_stuck_high
+	pla
+	jsr print_hex
+	jmp .fail_exit_b
+	
+.port_b_stuck_low:
+	pha
+	+set_cursor display_line, 20
+	+print text_stuck_low
+	pla
+	jsr print_hex
+
+.fail_exit_b:
+	+tone_220
+
+.port_b_done:
 	+delay 0
 }
 
@@ -561,6 +669,7 @@ ram_test_start:
 }
 		
 +crc32_impl CRC, $C00
++print_routines_impl
 
 font_data_cart:
 	!binary "font.bin"
@@ -602,13 +711,29 @@ text_ram_test_0_1000: !text "ram test 0-FFF"
 	!byte 0
 text_ram_test_1000_FFFF: !text "ram test 1000-FFFF"
 	!byte 0
-text_cia_test_dc00: !text "cia test dc00"
+text_cia_1_port_a: !text "cia 1 port a"
 	!byte 0
-text_cia_test_dd00: !text "cia test dd00"
+text_cia_1_port_b: !text "cia 1 port b"
+	!byte 0
+text_cia_2_port_a: !text "cia 2 port a"
+	!byte 0
+text_cia_2_port_b: !text "cia 2 port b"
 	!byte 0
 text_ok: !text "ok"
 	!byte 0
 text_fail: !text "fail"
+	!byte 0
+text_stuck_high:
+	!text "stuck high "
+	!byte 0
+text_stuck_low:
+	!text "stuck low "
+	!byte 0
+text_iec_stuck_high:
+	!text "iec stuck high "
+	!byte 0
+text_iec_stuck_low:
+	!text "iec stuck low "
 	!byte 0
 
 	* = $9FFF

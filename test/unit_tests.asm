@@ -26,6 +26,8 @@
 unittest=1
 !source "../src/macros.asm"
 !source "../src/crc32.asm"
+!source "../src/print_routines.asm"
+
 
 !zone {
 .m
@@ -243,7 +245,7 @@ test_crc32:
 	!byte $76, $35, $61, $1C
 }
 
-!source "../src/print_routines.asm"
++print_routines_impl
 
 !zone {
 .m
